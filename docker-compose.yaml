@@ -1,0 +1,40 @@
+version: '3.8'  # Versão do Docker Compose sendo usada
+
+services:  # Definição dos serviços que serão executados
+  app:  # Nome do serviço da aplicação (backend)
+    build: ./CentralDasImagens  # Diretório onde o Dockerfile para a aplicação backend está localizado
+    container_name: centralFotos  # Nome do contêiner para a aplicação
+    ports:
+      - "8080:8080"  # Mapeamento da porta 8080 do contêiner para a porta 8080 da máquina host
+    environment:  # Variáveis de ambiente que serão passadas para o contêiner da aplicação
+      SPRING_APPLICATION_NAME: centralFotos  # Nome da aplicação Spring Boot
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/central  # URL de conexão com o banco de dados MySQL, onde "db" é o nome do serviço
+      SPRING_DATASOURCE_USERNAME: root  # Nome de usuário para acessar o banco de dados
+      SPRING_DATASOURCE_PASSWORD: root  # Senha para acessar o banco de dados
+      SPRING_DATASOURCE_DRIVER-CLASS-NAME: com.mysql.cj.jdbc.Driver  # Driver JDBC usado pelo Spring Boot para conectar com MySQL
+      SPRING_JPA_HIBERNATE_DDL-AUTO: update  # Configuração para o Hibernate gerar ou atualizar as tabelas do banco de dados automaticamente
+    depends_on:  # Define que o serviço "app" depende do serviço "db" estar em execução
+      - db
+  
+  db:  # Nome do serviço do banco de dados
+    image: mysql:8.0  # Imagem oficial do MySQL que será usada
+    container_name: mysql-db  # Nome do contêiner do MySQL
+    environment:  # Variáveis de ambiente para configurar o MySQL
+      MYSQL_ROOT_PASSWORD: root  # Senha do usuário root do MySQL
+      MYSQL_DATABASE: central  # Nome do banco de dados que será criado ao inicializar o contêiner
+      MYSQL_USER: senac  # Nome de usuário adicional para o banco de dados
+      MYSQL_PASSWORD: senac  # Senha do usuário adicional
+    ports:
+      - "4306:3306"  # Mapeamento da porta 3306 do contêiner (onde o MySQL escuta) para a porta 4306 da máquina host
+    volumes:
+      - mysql_data:/var/lib/mysql  # Volume persistente para armazenar os dados do MySQL no host, evitando perda de dados ao parar o contêiner
+  
+  frontend:  # Nome do serviço frontend (React.js)
+    build: ./central-das-imagens-front  # Diretório onde o Dockerfile do frontend está localizado
+    ports:
+      - "3000:80"  # Mapeamento da porta 80 do contêiner para a porta 3000 da máquina host (onde a aplicação frontend será acessada)
+    depends_on:  # Define que o serviço frontend depende do serviço "app" (backend) estar em execução
+      - app
+
+volumes:  # Definição de volumes persistentes
+  mysql_data:  # Volume para armazenar os dados do banco de dados MySQL
